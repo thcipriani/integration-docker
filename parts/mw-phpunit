@@ -1,0 +1,1 @@
+RUN tail -n +1 /srv/deployment/integration/slave-scripts/bin/mw-phpunit.sh >> /run.sh

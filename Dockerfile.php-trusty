@@ -1,0 +1,65 @@
+# Dockerfile for PHP Trusty CI
+#
+# Build a base image that will be run by Jenkins
+FROM ubuntu:trusty
+MAINTAINER Wikimedia Foundation Release Engineering <releng@wikimedia.org>
+
+RUN apt-get update && \
+    apt-get install --yes --no-install-recommends wget && \
+    wget -O - -o /dev/null http://apt.wikimedia.org/autoinstall/keyring/wikimedia-archive-keyring.gpg | apt-key add -
+
+ADD .dockerfiles/wikimedia.list /etc/apt/sources.list.d/wikimedia.list
+ADD .dockerfiles/wikimedia.pref /etc/apt/preferences.d/wikimedia.pref
+
+RUN apt-get update && \
+    apt-get install --yes --no-install-recommends \
+    apache2 \
+    arcanist \
+    build-essential \
+    colordiff \
+    curl \
+    djvulibre-bin \
+    git \
+    imagemagick \
+    libimage-exiftool-perl \
+    mysql-server \
+    netpbm \
+    nodejs-legacy \
+    npm \
+    openjdk-7-jre-headless \
+    php-luasandbox \
+    php-wikidiff2 \
+    php5-cli \
+    php5-common \
+    php5-curl \
+    php5-dbg \
+    php5-gd \
+    php5-geoip \
+    php5-intl \
+    php5-memcached \
+    php5-mysql \
+    php5-redis \
+    php5-xhprof \
+    php5-xmlrpc \
+    sqlite3 \
+    webp \
+    && \
+    /usr/sbin/php5enmod -s ALL xhprof && \
+    apt-get clean
+
+ADD .dockerfiles/imagemagick-policy.xml /etc/ImageMagick/policy.xml
+
+RUN mkdir -p /opt/git/integration && \
+    git clone "https://gerrit.wikimedia.org/r/p/integration/config.git" /opt/git/integration/config && \
+    mkdir -p /srv/deployment/integration && \
+    git clone "https://gerrit.wikimedia.org/r/p/integration/jenkins.git" /srv/deployment/integration/slave-scripts && \
+    git clone --recurse-submodules "https://gerrit.wikimedia.org/r/p/integration/composer.git" /srv/deployment/integration/composer && \
+    ln -sf /srv/deployment/integration/composer/vendor/bin/composer /usr/local/bin/composer && \
+    /usr/bin/update-alternatives --install /usr/bin/php php /srv/deployment/integration/slave-scripts/bin/php 100 && \
+    /usr/bin/npm install -g npm@2.15.2 && \
+    /usr/sbin/service mysql start
+
+ENV EXECUTOR_NUMBER={{EXECUTOR_NUMBER}}
+ENV WORKSPACE=/job
+
+RUN printf '#!/bin/bash\n/usr/sbin/service mysql start\n' > /run.sh

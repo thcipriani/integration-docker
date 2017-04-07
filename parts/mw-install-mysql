@@ -1,0 +1,1 @@
+RUN tail -n +1 /srv/deployment/integration/slave-scripts/bin/mw-install-mysql.sh >> /run.sh
